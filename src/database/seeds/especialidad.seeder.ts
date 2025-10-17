@@ -1,4 +1,4 @@
-import { Especialidad } from './../../src/entities/especialidad.entity';
+import { Especialidad } from '../../entities/especialidad.entity';
 // src/database/seeds/especialidad.seeder.ts
 import { DataSource } from 'typeorm';
 

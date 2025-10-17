@@ -1,6 +1,6 @@
 // src/database/seeds/consultorio.seeder.ts
 import { DataSource } from 'typeorm';
-import { Consultorio } from './../../src/entities/consultorio.entity';
+import { Consultorio } from '../../entities/consultorio.entity';
 
 export class ConsultorioSeeder {
   public static async run(dataSource: DataSource): Promise<void> {
