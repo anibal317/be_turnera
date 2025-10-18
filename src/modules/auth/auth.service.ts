@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,63 +15,49 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ access_token: string; user: Partial<Usuario> }> {
-    // Verificar si el usuario ya existe
-    const existingUser = await this.usuarioRepository.findOne({
+  async register(registerDto: RegisterDto) {
+    // Verificar si el email ya existe
+    const existing = await this.usuarioRepository.findOne({
       where: { email: registerDto.email },
     });
 
-    if (existingUser) {
-      throw new ConflictException('El email ya está en uso');
+    if (existing) {
+      throw new ConflictException('El email ya está registrado');
     }
 
-    // Validar que si es medico tenga idDoctor, si es paciente tenga dniPaciente
-    if (registerDto.rol === 'medico' && !registerDto.idDoctor) {
-      throw new BadRequestException('Un médico debe tener un idDoctor asociado');
-    }
-
-    if (registerDto.rol === 'paciente' && !registerDto.dniPaciente) {
-      throw new BadRequestException('Un paciente debe tener un DNI asociado');
-    }
-
-    // Hashear la contraseña
+    // Hashear contraseña
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    // Crear el usuario
+    // Crear usuario
     const usuario = this.usuarioRepository.create({
       email: registerDto.email,
       password: hashedPassword,
-      rol: registerDto.rol,
-      idDoctor: registerDto.idDoctor,
-      dniPaciente: registerDto.dniPaciente,
+      nombre: registerDto.nombre || 'Usuario',
     });
 
     await this.usuarioRepository.save(usuario);
 
     // Generar token
-    const payload = {
+    const token = this.jwtService.sign({
       sub: usuario.idUsuario,
       email: usuario.email,
-      rol: usuario.rol,
-      idDoctor: usuario.idDoctor,
-      dniPaciente: usuario.dniPaciente,
-    };
-    const access_token = await this.jwtService.signAsync(payload);
-
-    // Remover password de la respuesta
-    const { password, ...userWithoutPassword } = usuario;
+    });
 
     return {
-      access_token,
-      user: userWithoutPassword,
+      access_token: token,
+      user: {
+        id: usuario.idUsuario,
+        email: usuario.email,
+        nombre: usuario.nombre,
+      },
     };
   }
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string; user: Partial<Usuario> }> {
-    // Buscar usuario (incluir password para validación)
+  async login(loginDto: LoginDto) {
+    // Buscar usuario
     const usuario = await this.usuarioRepository.findOne({
       where: { email: loginDto.email },
-      select: ['idUsuario', 'email', 'password', 'rol', 'activo', 'idDoctor', 'dniPaciente'],
+      select: ['idUsuario', 'email', 'password', 'nombre', 'activo'],
     });
 
     if (!usuario) {
@@ -79,46 +65,35 @@ export class AuthService {
     }
 
     // Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(loginDto.password, usuario.password);
-
-    if (!isPasswordValid) {
+    const isValid = await bcrypt.compare(loginDto.password, usuario.password);
+    if (!isValid) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // Verificar si el usuario está activo
+    // Verificar si está activo
     if (!usuario.activo) {
       throw new UnauthorizedException('Usuario inactivo');
     }
 
     // Generar token
-    const payload = {
+    const token = this.jwtService.sign({
       sub: usuario.idUsuario,
       email: usuario.email,
-      rol: usuario.rol,
-      idDoctor: usuario.idDoctor,
-      dniPaciente: usuario.dniPaciente,
-    };
-    const access_token = await this.jwtService.signAsync(payload);
-
-    // Remover password de la respuesta
-    const { password, ...userWithoutPassword } = usuario;
+    });
 
     return {
-      access_token,
-      user: userWithoutPassword,
+      access_token: token,
+      user: {
+        id: usuario.idUsuario,
+        email: usuario.email,
+        nombre: usuario.nombre,
+      },
     };
   }
 
-  async validateUser(userId: number): Promise<Usuario | null> {
+  async validateUser(userId: number) {
     return await this.usuarioRepository.findOne({
       where: { idUsuario: userId, activo: true },
-    });
-  }
-
-  async findOne(id: number): Promise<Usuario> {
-    return await this.usuarioRepository.findOne({
-      where: { idUsuario: id },
-      relations: ['doctor', 'paciente'],
     });
   }
 }

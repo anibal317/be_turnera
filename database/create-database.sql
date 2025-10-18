@@ -127,68 +127,45 @@ CREATE TABLE IF NOT EXISTS doctor_especialidad (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ============================================
--- TABLA: usuario (Sistema de autenticación)
+-- TABLA: usuario (autenticación simple)
 -- ============================================
 CREATE TABLE IF NOT EXISTS usuario (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    rol ENUM('admin', 'secretario', 'medico', 'paciente') DEFAULT 'paciente',
+    nombre VARCHAR(50) DEFAULT 'Usuario',
     activo BOOLEAN DEFAULT TRUE,
-    id_doctor INT NULL,
-    dni_paciente VARCHAR(9) NULL,
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_doctor) REFERENCES doctor(id_doctor) ON DELETE SET NULL,
-    FOREIGN KEY (dni_paciente) REFERENCES paciente(dni_paciente) ON DELETE SET NULL
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ============================================
--- ÍNDICES ADICIONALES (para mejorar performance)
+-- ÍNDICES ADICIONALES
 -- ============================================
-
--- Índice para búsquedas de turnos por fecha
 CREATE INDEX idx_turno_fecha_hora ON turno(fecha_hora);
-
--- Índice para búsquedas de turnos por estado
 CREATE INDEX idx_turno_estado ON turno(estado);
-
--- Índice para búsquedas de turnos por doctor
 CREATE INDEX idx_turno_doctor ON turno(id_doctor);
-
--- Índice para búsquedas de turnos por paciente
 CREATE INDEX idx_turno_paciente ON turno(id_paciente);
-
--- Índice para búsquedas de horarios por día
 CREATE INDEX idx_horario_dia ON horario_disponible(dia_semana);
-
--- Índice para búsquedas de pacientes activos
 CREATE INDEX idx_paciente_activo ON paciente(activo);
-
--- Índice para búsquedas de doctores activos
 CREATE INDEX idx_doctor_activo ON doctor(activo);
-
--- Índice para búsquedas de usuarios por email
 CREATE INDEX idx_usuario_email ON usuario(email);
-
--- Índice para búsquedas de usuarios activos
-CREATE INDEX idx_usuario_activo ON usuario(activo);
 
 -- ============================================
 -- DATOS INICIALES
 -- ============================================
 
--- Insertar cobertura por defecto
-INSERT INTO cobertura (nombre) VALUES ('Sin cobertura') ON DUPLICATE KEY UPDATE nombre = nombre;
+-- Cobertura por defecto
+INSERT INTO cobertura (nombre) VALUES ('Sin cobertura') 
+ON DUPLICATE KEY UPDATE nombre = nombre;
 
--- Insertar usuario administrador por defecto
--- Contraseña: admin123 (debe cambiarse en producción)
-INSERT INTO usuario (email, password, rol, activo)
-VALUES ('admin@turnera.com', '$2b$10$XQqKkzVzJzJxVZc.vN5XUe7Qz9Z.9mH8h9qHhKVb0K9YzVZ9Z9Z9Z', 'admin', TRUE)
+-- Usuario admin por defecto
+-- Email: admin@turnera.com
+-- Password: admin123
+INSERT INTO usuario (email, password, nombre, activo)
+VALUES ('admin@turnera.com', '$2b$10$YourHashedPasswordHere', 'Administrador', TRUE)
 ON DUPLICATE KEY UPDATE email = email;
 
 -- ============================================
 -- MENSAJE DE ÉXITO
 -- ============================================
 SELECT 'Base de datos "turnera" creada exitosamente' AS mensaje;
-SELECT 'Usuario admin por defecto: admin@turnera.com / admin123' AS credenciales;

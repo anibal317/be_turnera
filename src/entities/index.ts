@@ -6,4 +6,4 @@ export { Paciente } from './paciente.entity';
 export { Consultorio } from './consultorio.entity';
 export { HorarioDisponible, DiaSemana } from './horario-disponible.entity';
 export { Turno, EstadoTurno } from './turno.entity';
-export { Usuario, UserRole } from './usuario.entity';
+export { Usuario } from './usuario.entity';
