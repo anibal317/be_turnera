@@ -2,12 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
 import { TurnoService } from './turno.service';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
-import { EstadoTurno } from '@/entities/turno.entity';
+import { EstadoTurno } from '@/common/enums';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '@/entities/user.entity';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserRole } from '@/entities';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 
 @Controller('turnos')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -15,21 +15,21 @@ export class TurnoController {
   constructor(private readonly turnoService: TurnoService) {}
 
   @Post()
-  @Roles(UserRole.SECRETARIO, UserRole.PACIENTE)
-  create(@Body() createTurnoDto: CreateTurnoDto, @CurrentUser() user: any) {
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.PACIENTE)
+  create(@Body() createTurnoDto: CreateTurnoDto, @GetUser() user: any) {
     return this.turnoService.create(createTurnoDto);
   }
 
   @Get()
-  @Roles(UserRole.SECRETARIO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
   findAll() {
     return this.turnoService.findAll();
   }
 
   @Get('mis-turnos')
-  @Roles(UserRole.MEDICO, UserRole.PACIENTE)
-  async getMisTurnos(@CurrentUser() user: any) {
-    if (user.rol === UserRole.MEDICO) {
+  @Roles(UserRole.DOCTOR, UserRole.PACIENTE)
+  async getMisTurnos(@GetUser() user: any) {
+    if (user.rol === UserRole.DOCTOR) {
       // El idReferencia del médico debe corresponder al id_doctor
       return this.turnoService.findByDoctor(parseInt(user.idReferencia));
     } else if (user.rol === UserRole.PACIENTE) {
@@ -39,65 +39,65 @@ export class TurnoController {
   }
 
   @Get('estado/:estado')
-  @Roles(UserRole.SECRETARIO, UserRole.MEDICO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
   findByEstado(@Param('estado') estado: EstadoTurno) {
     return this.turnoService.findByEstado(estado);
   }
 
   @Get('paciente/:dni')
-  @Roles(UserRole.SECRETARIO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
   findByPaciente(@Param('dni') dni: string) {
     return this.turnoService.findByPaciente(dni);
   }
 
   @Get('doctor/:id')
-  @Roles(UserRole.SECRETARIO, UserRole.MEDICO)
-  findByDoctor(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
+  findByDoctor(@Param('id', ParseIntPipe) id: number, @GetUser() user: any) {
     // Si es médico, solo puede ver sus propios turnos
-    if (user.rol === UserRole.MEDICO && parseInt(user.idReferencia) !== id) {
+    if (user.rol === UserRole.DOCTOR && parseInt(user.idReferencia) !== id) {
       throw new Error('No tiene permisos para ver turnos de otros médicos');
     }
     return this.turnoService.findByDoctor(id);
   }
 
   @Get('fecha')
-  @Roles(UserRole.SECRETARIO, UserRole.MEDICO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
   findByFecha(@Query('fecha') fecha: string) {
     return this.turnoService.findByFecha(new Date(fecha));
   }
 
   @Get(':id')
-  @Roles(UserRole.SECRETARIO, UserRole.MEDICO, UserRole.PACIENTE)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR, UserRole.PACIENTE)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.turnoService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(UserRole.SECRETARIO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
   update(@Param('id', ParseIntPipe) id: number, @Body() updateTurnoDto: UpdateTurnoDto) {
     return this.turnoService.update(id, updateTurnoDto);
   }
 
   @Patch(':id/confirmar')
-  @Roles(UserRole.SECRETARIO, UserRole.MEDICO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
   confirmar(@Param('id', ParseIntPipe) id: number) {
     return this.turnoService.confirmarTurno(id);
   }
 
   @Patch(':id/cancelar')
-  @Roles(UserRole.SECRETARIO, UserRole.PACIENTE, UserRole.MEDICO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.PACIENTE, UserRole.DOCTOR)
   cancelar(@Param('id', ParseIntPipe) id: number) {
     return this.turnoService.cancelarTurno(id);
   }
 
   @Patch(':id/completar')
-  @Roles(UserRole.SECRETARIO, UserRole.MEDICO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
   completar(@Param('id', ParseIntPipe) id: number) {
     return this.turnoService.completarTurno(id);
   }
 
   @Delete(':id')
-  @Roles(UserRole.SECRETARIO)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.turnoService.remove(id);
   }

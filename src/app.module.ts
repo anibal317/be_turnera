@@ -7,7 +7,17 @@ import { PacienteModule } from './modules/paciente/paciente.module';
 import { TurnoModule } from './modules/turno/turno.module';
 import { EspecialidadModule } from './modules/especialidad/especialidad.module';
 import { CommonModule } from './modules/common.module';
-import * as entities from './entities';
+import {
+  Usuario,
+  Doctor,
+  Paciente,
+  Turno,
+  Especialidad,
+  ObraSocial,
+  Cobertura,
+  Consultorio,
+  HorarioDisponible,
+} from './entities';
 
 @Module({
   imports: [
@@ -23,8 +33,18 @@ import * as entities from './entities';
         username: configService.get('DB_USERNAME', 'root'),
         password: configService.get('DB_PASSWORD', ''),
         database: configService.get('DB_DATABASE', 'turnera'),
-        entities: Object.values(entities),
-        synchronize: false,
+        entities: [
+          Usuario,
+          Doctor,
+          Paciente,
+          Turno,
+          Especialidad,
+          ObraSocial,
+          Cobertura,
+          Consultorio,
+          HorarioDisponible,
+        ],
+        synchronize: true,
         logging: false,
       }),
       inject: [ConfigService],

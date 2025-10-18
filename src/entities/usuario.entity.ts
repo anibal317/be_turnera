@@ -1,5 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
+export enum UserRole {
+  ADMIN = 'admin',
+  DOCTOR = 'doctor',
+  SECRETARIA = 'secretaria',
+  PACIENTE = 'paciente',
+}
+
 @Entity('usuario')
 export class Usuario {
   @PrimaryGeneratedColumn({ name: 'id_usuario' })
@@ -13,6 +20,16 @@ export class Usuario {
 
   @Column({ length: 50, default: 'usuario' })
   nombre: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.PACIENTE,
+  })
+  rol: UserRole;
+
+  @Column({ name: 'id_referencia', nullable: true })
+  idReferencia: string;
 
   @Column({ default: true })
   activo: boolean;

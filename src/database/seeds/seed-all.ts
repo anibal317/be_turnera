@@ -2,6 +2,7 @@
 import { DataSource } from 'typeorm';
 import { EspecialidadSeeder } from './especialidad.seeder';
 import { ConsultorioSeeder } from './consultorio.seeder';
+import { UsuarioSeeder } from './usuario.seeder';
 import 'dotenv/config';
 
 export class SeedAll {
@@ -11,6 +12,7 @@ export class SeedAll {
     try {
       await ConsultorioSeeder.run(dataSource);
       await EspecialidadSeeder.run(dataSource);
+      await UsuarioSeeder.run(dataSource);
 
       console.log('✅ Todos los seeders ejecutados correctamente.');
     } catch (error) {

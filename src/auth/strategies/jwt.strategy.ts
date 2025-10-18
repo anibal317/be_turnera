@@ -10,8 +10,7 @@ export interface JwtPayload {
   sub: number;
   email: string;
   rol: string;
-  idDoctor?: number;
-  dniPaciente?: string;
+  idReferencia?: string;
 }
 
 @Injectable()
@@ -41,8 +40,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       idUsuario: payload.sub,
       email: payload.email,
       rol: payload.rol,
-      idDoctor: payload.idDoctor,
-      dniPaciente: payload.dniPaciente,
+      idReferencia: payload.idReferencia,
     };
   }
 }

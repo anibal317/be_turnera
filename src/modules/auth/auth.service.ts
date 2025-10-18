@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { Usuario } from '@/entities/usuario.entity';
+import { Usuario, UserRole } from '@/entities';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -28,19 +28,23 @@ export class AuthService {
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    // Crear usuario
+    // Crear usuario (por defecto será PACIENTE si no se especifica rol)
     const usuario = this.usuarioRepository.create({
       email: registerDto.email,
       password: hashedPassword,
       nombre: registerDto.nombre || 'Usuario',
+      rol: registerDto.rol || UserRole.PACIENTE,
+      idReferencia: registerDto.idReferencia || null,
     });
 
     await this.usuarioRepository.save(usuario);
 
-    // Generar token
+    // Generar token con rol
     const token = this.jwtService.sign({
       sub: usuario.idUsuario,
       email: usuario.email,
+      rol: usuario.rol,
+      idReferencia: usuario.idReferencia,
     });
 
     return {
@@ -49,6 +53,8 @@ export class AuthService {
         id: usuario.idUsuario,
         email: usuario.email,
         nombre: usuario.nombre,
+        rol: usuario.rol,
+        idReferencia: usuario.idReferencia,
       },
     };
   }
@@ -57,7 +63,7 @@ export class AuthService {
     // Buscar usuario
     const usuario = await this.usuarioRepository.findOne({
       where: { email: loginDto.email },
-      select: ['idUsuario', 'email', 'password', 'nombre', 'activo'],
+      select: ['idUsuario', 'email', 'password', 'nombre', 'rol', 'idReferencia', 'activo'],
     });
 
     if (!usuario) {
@@ -75,10 +81,12 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo');
     }
 
-    // Generar token
+    // Generar token con rol
     const token = this.jwtService.sign({
       sub: usuario.idUsuario,
       email: usuario.email,
+      rol: usuario.rol,
+      idReferencia: usuario.idReferencia,
     });
 
     return {
@@ -87,6 +95,8 @@ export class AuthService {
         id: usuario.idUsuario,
         email: usuario.email,
         nombre: usuario.nombre,
+        rol: usuario.rol,
+        idReferencia: usuario.idReferencia,
       },
     };
   }

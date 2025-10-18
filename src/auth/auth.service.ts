@@ -25,13 +25,13 @@ export class AuthService {
       throw new ConflictException('El email ya está registrado');
     }
 
-    // Validar que si es médico tenga idDoctor
-    if (registerDto.rol === UserRole.MEDICO && !registerDto.idDoctor) {
+    // Validar que si es médico tenga idReferencia
+    if (registerDto.rol === UserRole.DOCTOR && !registerDto.idReferencia) {
       throw new BadRequestException('Un médico debe tener asociado un ID de doctor');
     }
 
-    // Validar que si es paciente tenga dniPaciente
-    if (registerDto.rol === UserRole.PACIENTE && !registerDto.dniPaciente) {
+    // Validar que si es paciente tenga idReferencia (DNI)
+    if (registerDto.rol === UserRole.PACIENTE && !registerDto.idReferencia) {
       throw new BadRequestException('Un paciente debe tener asociado un DNI');
     }
 
@@ -42,9 +42,9 @@ export class AuthService {
     const usuario = this.usuarioRepository.create({
       email: registerDto.email,
       password: hashedPassword,
+      nombre: registerDto.nombre || 'Usuario',
       rol: registerDto.rol,
-      idDoctor: registerDto.idDoctor,
-      dniPaciente: registerDto.dniPaciente,
+      idReferencia: registerDto.idReferencia,
     });
 
     await this.usuarioRepository.save(usuario);
@@ -82,8 +82,7 @@ export class AuthService {
       sub: usuario.idUsuario,
       email: usuario.email,
       rol: usuario.rol,
-      idDoctor: usuario.idDoctor,
-      dniPaciente: usuario.dniPaciente,
+      idReferencia: usuario.idReferencia,
     };
 
     return {
@@ -91,9 +90,9 @@ export class AuthService {
       user: {
         idUsuario: usuario.idUsuario,
         email: usuario.email,
+        nombre: usuario.nombre,
         rol: usuario.rol,
-        idDoctor: usuario.idDoctor,
-        dniPaciente: usuario.dniPaciente,
+        idReferencia: usuario.idReferencia,
       },
     };
   }
@@ -115,7 +114,6 @@ export class AuthService {
   async getProfile(idUsuario: number) {
     const usuario = await this.usuarioRepository.findOne({
       where: { idUsuario },
-      relations: ['doctor', 'paciente'],
     });
 
     if (!usuario) {
