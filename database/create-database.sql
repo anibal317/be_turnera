@@ -12,6 +12,27 @@ COLLATE utf8mb4_0900_ai_ci;
 USE turnera;
 
 -- ============================================
+-- TABLA: cobertura
+-- ============================================
+CREATE TABLE IF NOT EXISTS cobertura (
+    id_cobertura INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) UNIQUE NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ============================================
+-- TABLA: obra_social
+-- ============================================
+CREATE TABLE IF NOT EXISTS obra_social (
+    codigo VARCHAR(6) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    telefono VARCHAR(15) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    id_cobertura INT NOT NULL,
+    activa BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (id_cobertura) REFERENCES cobertura(id_cobertura)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ============================================
 -- TABLA: doctor
 -- ============================================
 CREATE TABLE IF NOT EXISTS doctor (
@@ -31,27 +52,6 @@ CREATE TABLE IF NOT EXISTS doctor (
 CREATE TABLE IF NOT EXISTS especialidad (
     id_especialidad INT AUTO_INCREMENT PRIMARY KEY,
     nombre_especialidad VARCHAR(50)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- ============================================
--- TABLA: cobertura
--- ============================================
-CREATE TABLE IF NOT EXISTS cobertura (
-    id_cobertura INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) UNIQUE NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- ============================================
--- TABLA: obra_social
--- ============================================
-CREATE TABLE IF NOT EXISTS obra_social (
-    codigo VARCHAR(6) PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    telefono VARCHAR(15) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    id_cobertura INT NOT NULL,
-    activa BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (id_cobertura) REFERENCES cobertura(id_cobertura)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ============================================
@@ -127,6 +127,23 @@ CREATE TABLE IF NOT EXISTS doctor_especialidad (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ============================================
+-- TABLA: usuario (Sistema de autenticación)
+-- ============================================
+CREATE TABLE IF NOT EXISTS usuario (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    rol ENUM('admin', 'secretario', 'medico', 'paciente') DEFAULT 'paciente',
+    activo BOOLEAN DEFAULT TRUE,
+    id_doctor INT NULL,
+    dni_paciente VARCHAR(9) NULL,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_doctor) REFERENCES doctor(id_doctor) ON DELETE SET NULL,
+    FOREIGN KEY (dni_paciente) REFERENCES paciente(dni_paciente) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ============================================
 -- ÍNDICES ADICIONALES (para mejorar performance)
 -- ============================================
 
@@ -151,7 +168,27 @@ CREATE INDEX idx_paciente_activo ON paciente(activo);
 -- Índice para búsquedas de doctores activos
 CREATE INDEX idx_doctor_activo ON doctor(activo);
 
+-- Índice para búsquedas de usuarios por email
+CREATE INDEX idx_usuario_email ON usuario(email);
+
+-- Índice para búsquedas de usuarios activos
+CREATE INDEX idx_usuario_activo ON usuario(activo);
+
+-- ============================================
+-- DATOS INICIALES
+-- ============================================
+
+-- Insertar cobertura por defecto
+INSERT INTO cobertura (nombre) VALUES ('Sin cobertura') ON DUPLICATE KEY UPDATE nombre = nombre;
+
+-- Insertar usuario administrador por defecto
+-- Contraseña: admin123 (debe cambiarse en producción)
+INSERT INTO usuario (email, password, rol, activo)
+VALUES ('admin@turnera.com', '$2b$10$XQqKkzVzJzJxVZc.vN5XUe7Qz9Z.9mH8h9qHhKVb0K9YzVZ9Z9Z9Z', 'admin', TRUE)
+ON DUPLICATE KEY UPDATE email = email;
+
 -- ============================================
 -- MENSAJE DE ÉXITO
 -- ============================================
 SELECT 'Base de datos "turnera" creada exitosamente' AS mensaje;
+SELECT 'Usuario admin por defecto: admin@turnera.com / admin123' AS credenciales;

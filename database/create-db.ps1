@@ -27,14 +27,17 @@ Write-Host "Creando base de datos..." -ForegroundColor Yellow
 $scriptPath = Join-Path $PSScriptRoot "create-database.sql"
 
 try {
-    # Construir el comando
-    $mysqlCmd = "mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS_Plain"
-    
     # Ejecutar
     Get-Content $scriptPath | & mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p"$DB_PASS_Plain"
     
     Write-Host ""
     Write-Host "✓ Base de datos creada exitosamente" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Usuario administrador creado:" -ForegroundColor Green
+    Write-Host "  Email: admin@turnera.com"
+    Write-Host "  Password: admin123"
+    Write-Host ""
+    Write-Host "⚠️  IMPORTANTE: Cambia la contraseña del admin en producción" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Siguiente paso:" -ForegroundColor Green
     Write-Host "1. Copia el archivo .env.example a .env"

@@ -28,6 +28,12 @@ if %ERRORLEVEL% EQU 0 (
     echo.
     echo [OK] Base de datos creada exitosamente
     echo.
+    echo Usuario administrador creado:
+    echo   Email: admin@turnera.com
+    echo   Password: admin123
+    echo.
+    echo [ADVERTENCIA] Cambia la contraseña del admin en produccion
+    echo.
     echo Siguiente paso:
     echo 1. Copia el archivo .env.example a .env
     echo 2. Configura las credenciales en el archivo .env

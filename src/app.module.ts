@@ -1,15 +1,22 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { DoctorModule } from './modules/doctor/doctor.module';
 import { PacienteModule } from './modules/paciente/paciente.module';
 import { TurnoModule } from './modules/turno/turno.module';
 import { EspecialidadModule } from './modules/especialidad/especialidad.module';
 import { CommonModule } from './modules/common.module';
+import * as entities from './entities';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -19,17 +26,28 @@ import { CommonModule } from './modules/common.module';
         username: configService.get('DB_USERNAME', 'root'),
         password: configService.get('DB_PASSWORD', ''),
         database: configService.get('DB_DATABASE', 'turnera'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'], // ✅ Seguro y limpio
-        synchronize: true,
+        entities: Object.values(entities),
+        synchronize: false, // En producción siempre debe ser false
         logging: true,
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
     DoctorModule,
     PacienteModule,
     TurnoModule,
     EspecialidadModule,
     CommonModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class AppModule {}
