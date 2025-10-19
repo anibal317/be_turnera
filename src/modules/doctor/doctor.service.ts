@@ -75,8 +75,12 @@ export class DoctorService {
   }
 
   async update(id: number, updateDoctorDto: UpdateDoctorDto): Promise<Doctor> {
+    const { especialidades, ...rest } = updateDoctorDto;
     const doctor = await this.findOne(id);
-    Object.assign(doctor, updateDoctorDto);
+    Object.assign(doctor, rest);
+    if (especialidades && Array.isArray(especialidades)) {
+      doctor.especialidades = await this.especialidadRepository.findByIds(especialidades);
+    }
     return await this.doctorRepository.save(doctor);
   }
 

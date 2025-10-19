@@ -307,7 +307,8 @@ export class DoctorController {
         summary: 'Ejemplo de actualización',
         value: {
           telefono: '1199887766',
-          activo: false
+          activo: false,
+          especialidades: [2, 3]
         }
       }
     }
