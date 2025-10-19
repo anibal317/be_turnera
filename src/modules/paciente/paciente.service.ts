@@ -17,10 +17,41 @@ export class PacienteService {
     return await this.pacienteRepository.save(paciente);
   }
 
-  async findAll(): Promise<Paciente[]> {
-    return await this.pacienteRepository.find({
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    order?: 'ASC' | 'DESC';
+    nombre?: string;
+    apellido?: string;
+    dniPaciente?: string;
+    activo?: boolean;
+  } = {}): Promise<{ data: Paciente[]; total: number; page: number; limit: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      sort = 'apellido',
+      order = 'ASC',
+      nombre,
+      apellido,
+      dniPaciente,
+      activo
+    } = options;
+
+    const where: any = {};
+    if (nombre) where.nombre = nombre;
+    if (apellido) where.apellido = apellido;
+    if (dniPaciente) where.dniPaciente = dniPaciente;
+    if (typeof activo === 'boolean') where.activo = activo;
+
+    const [data, total] = await this.pacienteRepository.findAndCount({
+      where,
+      order: { [sort]: order },
+      skip: (page - 1) * limit,
+      take: limit,
       relations: ['obraSocial', 'cobertura'],
     });
+    return { data, total, page, limit };
   }
 
   async findOne(dni: string): Promise<Paciente> {

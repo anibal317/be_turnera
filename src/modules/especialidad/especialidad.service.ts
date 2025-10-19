@@ -17,10 +17,28 @@ export class EspecialidadService {
     return await this.especialidadRepository.save(especialidad);
   }
 
-  async findAll(): Promise<Especialidad[]> {
-    return await this.especialidadRepository.find({
-      relations: ['doctores'],
-    });
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: Especialidad[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'idEspecialidad', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.especialidadRepository.createQueryBuilder('especialidad')
+      .leftJoinAndSelect('especialidad.doctores', 'doctor');
+
+    if (filter) {
+      query.andWhere('LOWER(especialidad.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`especialidad.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<Especialidad> {

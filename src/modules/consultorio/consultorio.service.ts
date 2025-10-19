@@ -15,8 +15,27 @@ export class ConsultorioService {
     return await this.consultorioRepository.save(consultorio);
   }
 
-  async findAll(): Promise<Consultorio[]> {
-    return await this.consultorioRepository.find();
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: Consultorio[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'idConsultorio', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.consultorioRepository.createQueryBuilder('consultorio');
+
+    if (filter) {
+      query.andWhere('LOWER(consultorio.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`consultorio.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<Consultorio> {

@@ -17,10 +17,28 @@ export class CoberturaService {
     return await this.coberturaRepository.save(cobertura);
   }
 
-  async findAll(): Promise<Cobertura[]> {
-    return await this.coberturaRepository.find({
-      relations: ['obrasSociales'],
-    });
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: Cobertura[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'idCobertura', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.coberturaRepository.createQueryBuilder('cobertura')
+      .leftJoinAndSelect('cobertura.obrasSociales', 'obraSocial');
+
+    if (filter) {
+      query.andWhere('LOWER(cobertura.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`cobertura.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<Cobertura> {

@@ -38,11 +38,30 @@ export class TurnoService {
     return await this.turnoRepository.save(turno);
   }
 
-  async findAll(): Promise<Turno[]> {
-    return await this.turnoRepository.find({
-      relations: ['paciente', 'doctor', 'consultorio'],
-      order: { fechaHora: 'ASC' },
-    });
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: Turno[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'fechaHora', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.turnoRepository.createQueryBuilder('turno')
+      .leftJoinAndSelect('turno.paciente', 'paciente')
+      .leftJoinAndSelect('turno.doctor', 'doctor')
+      .leftJoinAndSelect('turno.consultorio', 'consultorio');
+
+    if (filter) {
+      query.andWhere('LOWER(paciente.nombre) LIKE :filter OR LOWER(doctor.nombre) LIKE :filter OR LOWER(consultorio.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`turno.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<Turno> {

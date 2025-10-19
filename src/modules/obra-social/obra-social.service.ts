@@ -32,10 +32,28 @@ export class ObraSocialService {
     return await this.obraSocialRepository.save(obraSocial);
   }
 
-  async findAll(): Promise<ObraSocial[]> {
-    return await this.obraSocialRepository.find({
-      relations: ['cobertura'],
-    });
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: ObraSocial[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'codigo', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.obraSocialRepository.createQueryBuilder('obraSocial')
+      .leftJoinAndSelect('obraSocial.cobertura', 'cobertura');
+
+    if (filter) {
+      query.andWhere('LOWER(obraSocial.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`obraSocial.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(codigo: string): Promise<ObraSocial> {

@@ -34,10 +34,29 @@ export class HorarioDisponibleService {
     return await this.horarioRepository.save(horario);
   }
 
-  async findAll(): Promise<HorarioDisponible[]> {
-    return await this.horarioRepository.find({
-      relations: ['doctor', 'consultorio'],
-    });
+  async findAll(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: HorarioDisponible[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'idHorario', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.horarioRepository.createQueryBuilder('horario')
+      .leftJoinAndSelect('horario.doctor', 'doctor')
+      .leftJoinAndSelect('horario.consultorio', 'consultorio');
+
+    if (filter) {
+      query.andWhere('LOWER(doctor.nombre) LIKE :filter OR LOWER(consultorio.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`horario.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: number): Promise<HorarioDisponible> {

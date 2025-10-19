@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsBoolean, IsOptional, Length, MaxLength } from 'class-validator';
+import { IsString, IsEmail, IsBoolean, IsOptional, MaxLength, IsArray, ArrayNotEmpty, IsInt } from 'class-validator';
 
 export class CreateDoctorDto {
   @IsString()
@@ -24,4 +24,10 @@ export class CreateDoctorDto {
   @IsBoolean()
   @IsOptional()
   activo?: boolean;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsInt({ each: true })
+  @IsOptional()
+  especialidades?: number[];
 }
