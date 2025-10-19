@@ -26,30 +26,46 @@ flowchart TD
 
 ### Relación entre turnos y horarios
 
-- Cada **turno** está asociado a un doctor, un paciente, un consultorio, una especialidad y un horario disponible.
-- Los **horarios disponibles** definen los días y franjas horarias en que un doctor atiende en un consultorio.
-- Al crear un turno, el sistema valida que el doctor esté disponible en ese horario y consultorio, y que no haya superposición con otros turnos.
-- Los turnos pueden tener los siguientes estados: `pendiente`, `confirmado`, `completado`, `cancelado`.
-- Los turnos pueden ser confirmados, cancelados o completados según el rol y el flujo de trabajo.
 
 ### ¿Qué puede hacer cada usuario?
 
 **ADMIN:**
 - Crear, ver, actualizar y eliminar turnos de cualquier paciente o doctor
+## Lógica de Soft Delete y Recuperación (Admin Only)
+
+### ¿Cómo funciona el Soft Delete?
+En este sistema, las entidades principales (`Usuario`, `Paciente`, `Doctor`, `Consultorio`, `Turno`) implementan **borrado lógico** mediante un campo `activo: boolean`. Cuando un registro es eliminado, simplemente se marca como `activo: false` en vez de eliminarse físicamente de la base de datos. Esto permite mantener la integridad de los datos y la trazabilidad de los registros.
+
+### Visibilidad de registros inactivos
+- **Usuarios comunes**: Solo pueden ver y operar sobre registros activos (`activo: true`). Los registros inactivos no aparecen en los endpoints GET ni pueden ser modificados por usuarios que no sean administradores.
+- **Administradores**: Pueden ver todos los registros, tanto activos como inactivos, y tienen acceso a endpoints especiales para listar y restaurar registros inactivos.
+
+### Endpoints especiales para administradores
+Cada módulo principal expone dos endpoints adicionales, accesibles solo para administradores:
+
+- `GET /[entidad]/inactivos`: Lista todos los registros inactivos de la entidad.
+- `PATCH /[entidad]/{id}/restaurar`: Restaura un registro inactivo, marcándolo nuevamente como activo.
+
+**Ejemplo:**
+- `GET /usuario/inactivos` (solo admin)
+- `PATCH /usuario/5/restaurar` (solo admin)
+
+Estos endpoints requieren autenticación y el rol de administrador. Si un usuario sin permisos intenta acceder, recibirá un error 403.
+
+### Ejemplo de flujo de borrado y restauración
+1. Un usuario elimina un registro: el campo `activo` pasa a `false`.
+2. El registro desaparece de los listados para usuarios comunes.
+3. Un administrador puede ver el registro en `/inactivos` y restaurarlo con `/restaurar`.
+4. El registro vuelve a estar disponible para todos.
+
+### Swagger y documentación
+Todos los endpoints relacionados con soft delete y restauración están documentados en Swagger, incluyendo ejemplos de respuesta y restricciones de acceso.
+
+---
 - Confirmar, cancelar y completar cualquier turno
 - Gestionar usuarios, doctores, pacientes, consultorios, especialidades, obras sociales y horarios
 
 **DOCTOR:**
-- Ver solo sus propios turnos y horarios
-- Confirmar, cancelar y completar sus turnos
-- Crear y editar pacientes
-
-**SECRETARIA:**
-- Crear, ver, actualizar y eliminar turnos de cualquier paciente o doctor
-- Confirmar y cancelar turnos
-- Gestionar pacientes, doctores, consultorios, obras sociales y horarios
-
-**PACIENTE:**
 - Ver y crear sus propios turnos
 - Cancelar sus turnos
 - Ver detalles de sus turnos y horarios asignados

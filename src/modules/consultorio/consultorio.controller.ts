@@ -1,5 +1,8 @@
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, getSchemaPath, ApiExtraModels } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, getSchemaPath, ApiExtraModels, ApiForbiddenResponse } from '@nestjs/swagger';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { UserRole } from '../auth/entities/usuario.entity';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { ConsultorioService } from './consultorio.service';
 import { Consultorio } from './entities/consultorio.entity';
 
@@ -107,13 +110,16 @@ export class ConsultorioController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
     @Query('filter') filter?: string,
+    @GetUser() user?: any
   ) {
+    const isAdmin = user && user.rol === UserRole.ADMIN;
     return this.consultorioService.findAll({
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       sortBy,
       sortOrder,
       filter,
+      isAdmin,
     });
   }
 
@@ -183,8 +189,9 @@ export class ConsultorioController {
   @ApiResponse({ status: 404, description: 'Consultorio no encontrado.' })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.consultorioService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @GetUser() user?: any) {
+    const isAdmin = user && user.rol === UserRole.ADMIN;
+    return this.consultorioService.findOne(id, isAdmin);
   }
 
   @Patch(':id')
@@ -227,20 +234,50 @@ export class ConsultorioController {
     return this.consultorioService.update(id, nombre, activo);
   }
 
+
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar consultorio', description: 'Elimina un consultorio por su ID.' })
+  @ApiOperation({ summary: 'Eliminar consultorio (soft delete)', description: 'Marca un consultorio como inactivo.' })
   @ApiParam({ name: 'id', type: Number, description: 'ID del consultorio' })
   @ApiResponse({
     status: 200,
-    description: 'Consultorio eliminado correctamente.',
+    description: 'Consultorio marcado como inactivo.',
     example: {
-      message: 'Consultorio eliminado correctamente.'
+      message: 'Consultorio marcado como inactivo.'
     }
   })
-  @ApiResponse({ status: 404, description: 'Consultorio no encontrado.' })
-  @ApiResponse({ status: 401, description: 'No autenticado.' })
-  @ApiResponse({ status: 403, description: 'No autorizado.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.consultorioService.remove(id);
+  }
+
+
+  /**
+   * Listar consultorios eliminados (solo admin)
+   * @returns Listado de consultorios marcados como inactivos (soft delete)
+   */
+  @Get('inactivos')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Listar consultorios eliminados', description: 'Obtiene los consultorios marcados como inactivos. Solo accesible para administradores.' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Listado de consultorios inactivos.' })
+  @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin puede acceder a este recurso.' })
+  findInactivos() {
+    return this.consultorioService.findInactivos();
+  }
+
+
+  /**
+   * Restaurar consultorio eliminado (solo admin)
+   * @param id ID del consultorio
+   * @returns Consultorio restaurado
+   */
+  @Patch(':id/restaurar')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restaurar consultorio eliminado', description: 'Restaura un consultorio marcado como inactivo. Solo accesible para administradores.' })
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number, description: 'ID del consultorio', example: 1 })
+  @ApiResponse({ status: 200, description: 'Consultorio restaurado.' })
+  @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin puede acceder a este recurso.' })
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.consultorioService.restore(id);
   }
 }

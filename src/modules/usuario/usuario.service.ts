@@ -10,12 +10,22 @@ export class UsuarioService {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
-  async findAll(): Promise<Usuario[]> {
-    return this.usuarioRepository.find();
+
+  async findAll(isAdmin = false): Promise<Usuario[]> {
+    if (isAdmin) {
+      return this.usuarioRepository.find();
+    }
+    return this.usuarioRepository.find({ where: { activo: true } });
   }
 
-  async findOne(id: number): Promise<Usuario> {
-    const usuario = await this.usuarioRepository.findOne({ where: { idUsuario: id } });
+  async findAllInactivos(): Promise<Usuario[]> {
+    return this.usuarioRepository.find({ where: { activo: false } });
+  }
+
+  async findOne(id: number, isAdmin = false): Promise<Usuario> {
+    const where: any = { idUsuario: id };
+    if (!isAdmin) where.activo = true;
+    const usuario = await this.usuarioRepository.findOne({ where });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
     return usuario;
   }
@@ -33,6 +43,14 @@ export class UsuarioService {
 
   async remove(id: number): Promise<void> {
     const usuario = await this.findOne(id);
-    await this.usuarioRepository.remove(usuario);
+    usuario.activo = false;
+    await this.usuarioRepository.save(usuario);
+  }
+
+  async restore(id: number): Promise<Usuario> {
+    const usuario = await this.usuarioRepository.findOne({ where: { idUsuario: id, activo: false } });
+    if (!usuario) throw new NotFoundException('Usuario inactivo no encontrado');
+    usuario.activo = true;
+    return this.usuarioRepository.save(usuario);
   }
 }

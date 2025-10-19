@@ -21,32 +21,31 @@ export class ConsultorioService {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     filter?: string;
+    isAdmin?: boolean;
   } = {}): Promise<{ data: Consultorio[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 10, sortBy = 'idConsultorio', sortOrder = 'ASC', filter } = options;
+    const { page = 1, limit = 10, sortBy = 'idConsultorio', sortOrder = 'ASC', filter, isAdmin = false } = options;
     const skip = (page - 1) * limit;
     const query = this.consultorioRepository.createQueryBuilder('consultorio');
-
+    if (!isAdmin) {
+      query.andWhere('consultorio.activo = :activo', { activo: true });
+    }
     if (filter) {
       query.andWhere('LOWER(consultorio.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
     }
-
     query.orderBy(`consultorio.${sortBy}`, sortOrder as any)
       .skip(skip)
       .take(limit);
-
     const [data, total] = await query.getManyAndCount();
     return { data, total, page, limit };
   }
 
-  async findOne(id: number): Promise<Consultorio> {
-    const consultorio = await this.consultorioRepository.findOne({
-      where: { idConsultorio: id },
-    });
-
+  async findOne(id: number, isAdmin = false): Promise<Consultorio> {
+    const where: any = { idConsultorio: id };
+    if (!isAdmin) where.activo = true;
+    const consultorio = await this.consultorioRepository.findOne({ where });
     if (!consultorio) {
       throw new NotFoundException(`Consultorio con ID ${id} no encontrado`);
     }
-
     return consultorio;
   }
 
@@ -59,9 +58,22 @@ export class ConsultorioService {
     return await this.consultorioRepository.save(consultorio);
   }
 
+
   async remove(id: number): Promise<void> {
     const consultorio = await this.findOne(id);
-    await this.consultorioRepository.remove(consultorio);
+    consultorio.activo = false;
+    await this.consultorioRepository.save(consultorio);
+  }
+
+  async findInactivos(): Promise<Consultorio[]> {
+    return await this.consultorioRepository.find({ where: { activo: false } });
+  }
+
+  async restore(id: number): Promise<Consultorio> {
+    const consultorio = await this.consultorioRepository.findOne({ where: { idConsultorio: id, activo: false } });
+    if (!consultorio) throw new NotFoundException('Consultorio inactivo no encontrado');
+    consultorio.activo = true;
+    return this.consultorioRepository.save(consultorio);
   }
 
   async findActivos(): Promise<Consultorio[]> {

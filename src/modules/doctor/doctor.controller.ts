@@ -1,4 +1,6 @@
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiExtraModels, getSchemaPath, ApiQuery } from '@nestjs/swagger';
+import { ApiForbiddenResponse } from '@nestjs/swagger';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
 import { DoctorService } from './doctor.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
@@ -161,9 +163,11 @@ export class DoctorController {
     @Query('nombre') nombre?: string,
     @Query('apellido') apellido?: string,
     @Query('matricula') matricula?: string,
-    @Query('activo') activo?: boolean
+    @Query('activo') activo?: boolean,
+    @GetUser() user?: any
   ) {
-    return this.doctorService.findAll({ page, limit, sort, order, nombre, apellido, matricula, activo });
+    const isAdmin = user && user.rol === UserRole.ADMIN;
+    return this.doctorService.findAll({ page, limit, sort, order, nombre, apellido, matricula, activo, isAdmin });
   }
 
   @Get('activos')
@@ -292,8 +296,9 @@ export class DoctorController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Doctor no encontrado.' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.doctorService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @GetUser() user?: any) {
+    const isAdmin = user && user.rol === UserRole.ADMIN;
+    return this.doctorService.findOne(id, isAdmin);
   }
 
   @Patch(':id')
@@ -358,28 +363,65 @@ export class DoctorController {
     return this.doctorService.update(id, updateDoctorDto);
   }
 
+
   @Delete(':id')
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Eliminar doctor', description: 'Elimina un doctor del sistema por su ID.' })
+  @ApiOperation({ summary: 'Eliminar doctor (soft delete)', description: 'Elimina un doctor del sistema por su ID (soft delete).' })
   @ApiParam({ name: 'id', type: Number, description: 'ID del doctor', example: 1 })
   @ApiResponse({
     status: 200,
-    description: 'Doctor eliminado correctamente.',
+    description: 'Doctor marcado como inactivo.',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Doctor eliminado correctamente.' }
+        message: { type: 'string', example: 'Doctor marcado como inactivo.' }
       },
       example: {
-        message: 'Doctor eliminado correctamente.'
+        message: 'Doctor marcado como inactivo.'
       }
     }
   })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o faltantes.' })
-  @ApiResponse({ status: 401, description: 'No autenticado.' })
-  @ApiResponse({ status: 403, description: 'No autorizado.' })
-  @ApiResponse({ status: 404, description: 'Doctor no encontrado.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.doctorService.remove(id);
+  }
+
+  @Get('inactivos')
+  /**
+   * Listar doctores eliminados (solo admin)
+   * @returns Listado de doctores marcados como inactivos (soft delete)
+   */
+  @Get('inactivos')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Listar doctores eliminados', description: 'Obtiene los doctores marcados como inactivos. Solo accesible para administradores.' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Listado de doctores inactivos.' })
+  @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin puede acceder a este recurso.' })
+  findInactivos(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sort') sort?: string,
+    @Query('order') order?: 'ASC' | 'DESC',
+    @Query('nombre') nombre?: string,
+    @Query('apellido') apellido?: string,
+    @Query('matricula') matricula?: string
+  ) {
+    return this.doctorService.findInactivos({ page, limit, sort, order, nombre, apellido, matricula });
+  }
+
+  @Patch(':id/restaurar')
+  /**
+   * Restaurar doctor eliminado (solo admin)
+   * @param id ID del doctor
+   * @returns Doctor restaurado
+   */
+  @Patch(':id/restaurar')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restaurar doctor eliminado', description: 'Restaura un doctor marcado como inactivo. Solo accesible para administradores.' })
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', type: Number, description: 'ID del doctor', example: 1 })
+  @ApiResponse({ status: 200, description: 'Doctor restaurado.' })
+  @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin puede acceder a este recurso.' })
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.doctorService.restore(id);
   }
 }

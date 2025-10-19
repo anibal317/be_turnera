@@ -44,13 +44,18 @@ export class TurnoService {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     filter?: string;
+    isAdmin?: boolean;
   } = {}): Promise<{ data: Turno[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 10, sortBy = 'fechaHora', sortOrder = 'ASC', filter } = options;
+    const { page = 1, limit = 10, sortBy = 'fechaHora', sortOrder = 'ASC', filter, isAdmin = false } = options;
     const skip = (page - 1) * limit;
     const query = this.turnoRepository.createQueryBuilder('turno')
       .leftJoinAndSelect('turno.paciente', 'paciente')
       .leftJoinAndSelect('turno.doctor', 'doctor')
       .leftJoinAndSelect('turno.consultorio', 'consultorio');
+
+    if (!isAdmin) {
+      query.andWhere('turno.activo = :activo', { activo: true });
+    }
 
     if (filter) {
       query.andWhere('LOWER(paciente.nombre) LIKE :filter OR LOWER(doctor.nombre) LIKE :filter OR LOWER(consultorio.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
@@ -64,16 +69,16 @@ export class TurnoService {
     return { data, total, page, limit };
   }
 
-  async findOne(id: number): Promise<Turno> {
+  async findOne(id: number, isAdmin = false): Promise<Turno> {
+    const where: any = { idTurno: id };
+    if (!isAdmin) where.activo = true;
     const turno = await this.turnoRepository.findOne({
-      where: { idTurno: id },
+      where,
       relations: ['paciente', 'doctor', 'consultorio'],
     });
-
     if (!turno) {
       throw new NotFoundException(`Turno con ID ${id} no encontrado`);
     }
-
     return turno;
   }
 
@@ -90,46 +95,86 @@ export class TurnoService {
     return await this.turnoRepository.save(turno);
   }
 
+
   async remove(id: number): Promise<void> {
     const turno = await this.findOne(id);
-    await this.turnoRepository.remove(turno);
+    turno.activo = false;
+    await this.turnoRepository.save(turno);
   }
 
-  async findByPaciente(dniPaciente: string): Promise<Turno[]> {
+  async findInactivos(options: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    filter?: string;
+  } = {}): Promise<{ data: Turno[]; total: number; page: number; limit: number }> {
+    const { page = 1, limit = 10, sortBy = 'fechaHora', sortOrder = 'ASC', filter } = options;
+    const skip = (page - 1) * limit;
+    const query = this.turnoRepository.createQueryBuilder('turno')
+      .leftJoinAndSelect('turno.paciente', 'paciente')
+      .leftJoinAndSelect('turno.doctor', 'doctor')
+      .leftJoinAndSelect('turno.consultorio', 'consultorio')
+      .where('turno.activo = :activo', { activo: false });
+
+    if (filter) {
+      query.andWhere('LOWER(paciente.nombre) LIKE :filter OR LOWER(doctor.nombre) LIKE :filter OR LOWER(consultorio.nombre) LIKE :filter', { filter: `%${filter.toLowerCase()}%` });
+    }
+
+    query.orderBy(`turno.${sortBy}`, sortOrder as any)
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total, page, limit };
+  }
+
+  async restore(id: number): Promise<Turno> {
+    const turno = await this.turnoRepository.findOne({ where: { idTurno: id, activo: false } });
+    if (!turno) throw new NotFoundException('Turno inactivo no encontrado');
+    turno.activo = true;
+    return this.turnoRepository.save(turno);
+  }
+
+  async findByPaciente(dniPaciente: string, isAdmin = false): Promise<Turno[]> {
+    const where: any = { idPaciente: dniPaciente };
+    if (!isAdmin) where.activo = true;
     return await this.turnoRepository.find({
-      where: { idPaciente: dniPaciente },
+      where,
       relations: ['doctor', 'consultorio'],
       order: { fechaHora: 'DESC' },
     });
   }
 
-  async findByDoctor(idDoctor: number): Promise<Turno[]> {
+  async findByDoctor(idDoctor: number, isAdmin = false): Promise<Turno[]> {
+    const where: any = { idDoctor };
+    if (!isAdmin) where.activo = true;
     return await this.turnoRepository.find({
-      where: { idDoctor },
+      where,
       relations: ['paciente', 'consultorio'],
       order: { fechaHora: 'ASC' },
     });
   }
 
-  async findByEstado(estado: EstadoTurno): Promise<Turno[]> {
+  async findByEstado(estado: EstadoTurno, isAdmin = false): Promise<Turno[]> {
+    const where: any = { estado };
+    if (!isAdmin) where.activo = true;
     return await this.turnoRepository.find({
-      where: { estado },
+      where,
       relations: ['paciente', 'doctor', 'consultorio'],
       order: { fechaHora: 'ASC' },
     });
   }
 
-  async findByFecha(fecha: Date): Promise<Turno[]> {
+  async findByFecha(fecha: Date, isAdmin = false): Promise<Turno[]> {
     const inicioDelDia = new Date(fecha);
     inicioDelDia.setHours(0, 0, 0, 0);
-    
     const finDelDia = new Date(fecha);
     finDelDia.setHours(23, 59, 59, 999);
-
+    const where: any = { fechaHora: Between(inicioDelDia, finDelDia) };
+    if (!isAdmin) where.activo = true;
     return await this.turnoRepository.find({
-      where: {
-        fechaHora: Between(inicioDelDia, finDelDia),
-      },
+      where,
       relations: ['paciente', 'doctor', 'consultorio'],
       order: { fechaHora: 'ASC' },
     });

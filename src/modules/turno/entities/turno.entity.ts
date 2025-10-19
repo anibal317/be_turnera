@@ -10,6 +10,9 @@ export class Turno {
   @PrimaryGeneratedColumn({ name: 'id_turno' })
   idTurno: number;
 
+  @Column({ default: true })
+  activo: boolean;
+
   @Column({ name: 'id_paciente', length: 9, nullable: false })
   idPaciente: string;
 

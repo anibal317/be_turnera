@@ -26,6 +26,7 @@ export class PacienteService {
     apellido?: string;
     dniPaciente?: string;
     activo?: boolean;
+    isAdmin?: boolean;
   } = {}): Promise<{ data: Paciente[]; total: number; page: number; limit: number }> {
     const {
       page = 1,
@@ -35,14 +36,23 @@ export class PacienteService {
       nombre,
       apellido,
       dniPaciente,
-      activo
+      activo,
+      isAdmin = false
     } = options;
 
     const where: any = {};
     if (nombre) where.nombre = nombre;
     if (apellido) where.apellido = apellido;
     if (dniPaciente) where.dniPaciente = dniPaciente;
-    if (typeof activo === 'boolean') where.activo = activo;
+    if (!isAdmin) {
+      if (typeof activo === 'boolean') {
+        where.activo = activo;
+      } else {
+        where.activo = true;
+      }
+    } else if (typeof activo === 'boolean') {
+      where.activo = activo;
+    }
 
     const [data, total] = await this.pacienteRepository.findAndCount({
       where,
@@ -54,16 +64,16 @@ export class PacienteService {
     return { data, total, page, limit };
   }
 
-  async findOne(dni: string): Promise<Paciente> {
+  async findOne(dni: string, isAdmin = false): Promise<Paciente> {
+    const where: any = { dniPaciente: dni };
+    if (!isAdmin) where.activo = true;
     const paciente = await this.pacienteRepository.findOne({
-      where: { dniPaciente: dni },
+      where,
       relations: ['obraSocial', 'cobertura', 'turnos'],
     });
-
     if (!paciente) {
       throw new NotFoundException(`Paciente con DNI ${dni} no encontrado`);
     }
-
     return paciente;
   }
 
@@ -73,9 +83,25 @@ export class PacienteService {
     return await this.pacienteRepository.save(paciente);
   }
 
+
   async remove(dni: string): Promise<void> {
     const paciente = await this.findOne(dni);
-    await this.pacienteRepository.remove(paciente);
+    paciente.activo = false;
+    await this.pacienteRepository.save(paciente);
+  }
+
+  async findInactivos(): Promise<Paciente[]> {
+    return await this.pacienteRepository.find({
+      where: { activo: false },
+      relations: ['obraSocial', 'cobertura'],
+    });
+  }
+
+  async restore(dni: string): Promise<Paciente> {
+    const paciente = await this.pacienteRepository.findOne({ where: { dniPaciente: dni, activo: false } });
+    if (!paciente) throw new NotFoundException('Paciente inactivo no encontrado');
+    paciente.activo = true;
+    return this.pacienteRepository.save(paciente);
   }
 
   async findActivos(): Promise<Paciente[]> {

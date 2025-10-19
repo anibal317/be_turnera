@@ -1,4 +1,5 @@
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody, ApiExtraModels, getSchemaPath } from '@nestjs/swagger';
+import { ApiForbiddenResponse } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { TurnoService } from './turno.service';
 import { CreateTurnoDto } from './dto/create-turno.dto';
@@ -142,21 +143,24 @@ export class TurnoController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Recurso no encontrado.' })
-  findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('sortBy') sortBy?: string,
-    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
-    @Query('filter') filter?: string,
-  ) {
-    return this.turnoService.findAll({
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      sortBy,
-      sortOrder,
-      filter,
-    });
-  }
+     findAll(
+       @Query('page') page?: number,
+       @Query('limit') limit?: number,
+       @Query('sortBy') sortBy?: string,
+       @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+       @Query('filter') filter?: string,
+       @GetUser() user?: any
+     ) {
+       const isAdmin = user && user.rol === UserRole.ADMIN;
+       return this.turnoService.findAll({
+         page: page ? Number(page) : undefined,
+         limit: limit ? Number(limit) : undefined,
+         sortBy,
+         sortOrder,
+         filter,
+         isAdmin,
+       });
+     }
 
   @Get('mis-turnos')
   @Roles(UserRole.DOCTOR, UserRole.PACIENTE)
@@ -201,13 +205,14 @@ export class TurnoController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Recurso no encontrado.' })
-  async getMisTurnos(@GetUser() user: any) {
-    if (user.rol === UserRole.DOCTOR) {
-      return this.turnoService.findByDoctor(parseInt(user.idReferencia));
-    } else if (user.rol === UserRole.PACIENTE) {
-      return this.turnoService.findByPaciente(user.idReferencia);
-    }
-  }
+     async getMisTurnos(@GetUser() user: any) {
+       const isAdmin = user.rol === UserRole.ADMIN;
+       if (user.rol === UserRole.DOCTOR) {
+         return this.turnoService.findByDoctor(parseInt(user.idReferencia), isAdmin);
+       } else if (user.rol === UserRole.PACIENTE) {
+         return this.turnoService.findByPaciente(user.idReferencia, isAdmin);
+       }
+     }
 
   @Get('estado/:estado')
   @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
@@ -251,9 +256,10 @@ export class TurnoController {
   })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
-  findByEstado(@Param('estado') estado: EstadoTurno) {
-    return this.turnoService.findByEstado(estado);
-  }
+     findByEstado(@Param('estado') estado: EstadoTurno, @GetUser() user?: any) {
+       const isAdmin = user && user.rol === UserRole.ADMIN;
+       return this.turnoService.findByEstado(estado, isAdmin);
+     }
 
   @Get('paciente/:dni')
   @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
@@ -299,9 +305,10 @@ export class TurnoController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Paciente no encontrado.' })
-  findByPaciente(@Param('dni') dni: string) {
-    return this.turnoService.findByPaciente(dni);
-  }
+     findByPaciente(@Param('dni') dni: string, @GetUser() user?: any) {
+       const isAdmin = user && user.rol === UserRole.ADMIN;
+       return this.turnoService.findByPaciente(dni, isAdmin);
+     }
 
   @Get('doctor/:id')
   @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
@@ -347,12 +354,13 @@ export class TurnoController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Doctor no encontrado.' })
-  findByDoctor(@Param('id', ParseIntPipe) id: number, @GetUser() user: any) {
-    if (user.rol === UserRole.DOCTOR && parseInt(user.idReferencia) !== id) {
-      throw new Error('No tiene permisos para ver turnos de otros médicos');
-    }
-    return this.turnoService.findByDoctor(id);
-  }
+     findByDoctor(@Param('id', ParseIntPipe) id: number, @GetUser() user: any) {
+       if (user.rol === UserRole.DOCTOR && parseInt(user.idReferencia) !== id) {
+         throw new Error('No tiene permisos para ver turnos de otros médicos');
+       }
+       const isAdmin = user.rol === UserRole.ADMIN;
+       return this.turnoService.findByDoctor(id, isAdmin);
+     }
 
   @Get('fecha')
   @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR)
@@ -398,9 +406,10 @@ export class TurnoController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Recurso no encontrado.' })
-  findByFecha(@Query('fecha') fecha: string) {
-    return this.turnoService.findByFecha(new Date(fecha));
-  }
+     findByFecha(@Query('fecha') fecha: string, @GetUser() user?: any) {
+       const isAdmin = user && user.rol === UserRole.ADMIN;
+       return this.turnoService.findByFecha(new Date(fecha), isAdmin);
+     }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.SECRETARIA, UserRole.DOCTOR, UserRole.PACIENTE)
@@ -448,57 +457,57 @@ export class TurnoController {
     return this.turnoService.findOne(id);
   }
 
-  @Patch(':id')
+
+  @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
-  @ApiOperation({ summary: 'Actualizar un turno', description: 'Permite modificar los datos de un turno existente.' })
+  @ApiOperation({ summary: 'Eliminar turno (soft delete)', description: 'Marca un turno como inactivo.' })
   @ApiParam({ name: 'id', type: Number, description: 'ID del turno', example: 1 })
-  @ApiBody({
-    type: UpdateTurnoDto,
-    examples: {
-      ejemplo: {
-        summary: 'Ejemplo de actualización',
-        value: {
-          fechaHora: '2025-10-18T11:00:00.000Z',
-          estado: 'confirmado',
-          duracionMinutos: 45
-        }
-      }
-    }
-  })
   @ApiResponse({
     status: 200,
-    description: 'Turno actualizado correctamente.',
-    schema: { $ref: getSchemaPath(UpdateTurnoDto) },
+    description: 'Turno marcado como inactivo.',
     example: {
-      idTurno: 1,
-      idPaciente: '12345678',
-      idDoctor: 1,
-      idConsultorio: 2,
-      fechaHora: '2025-10-18T11:00:00.000Z',
-      duracionMinutos: 45,
-      estado: 'confirmado',
-      paciente: {
-        dniPaciente: '12345678',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-        email: 'juan.perez@mail.com',
-        activo: true
-      },
-      doctor: {
-        idDoctor: 1,
-        nombre: 'Ana',
-        apellido: 'García',
-        email: 'ana.garcia@mail.com',
-        matricula: 'MAT12345',
-        activo: true
-      },
-      consultorio: {
-        idConsultorio: 2,
-        nombre: 'Central',
-        activo: true
-      }
+      message: 'Turno marcado como inactivo.'
     }
   })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.turnoService.remove(id);
+  }
+
+  @Get('inactivos')
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
+  @ApiOperation({ summary: 'Listar turnos eliminados', description: 'Obtiene los turnos marcados como inactivos.' })
+  @ApiResponse({ status: 200, description: 'Listado de turnos inactivos.' })
+    /**
+     * Listar turnos eliminados (solo admin o secretaria)
+     * @returns Listado de turnos marcados como inactivos (soft delete)
+     */
+    @ApiBearerAuth()
+    @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin o secretaria puede acceder a este recurso.' })
+    findInactivos(
+      @Query('page') page?: number,
+      @Query('limit') limit?: number,
+      @Query('sortBy') sortBy?: string,
+      @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+      @Query('filter') filter?: string,
+    ) {
+      return this.turnoService.findInactivos({ page, limit, sortBy, sortOrder, filter });
+    }
+
+  @Patch(':id/restaurar')
+  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
+  @ApiOperation({ summary: 'Restaurar turno eliminado', description: 'Restaura un turno marcado como inactivo.' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID del turno', example: 1 })
+  @ApiResponse({ status: 200, description: 'Turno restaurado.' })
+    /**
+     * Restaurar turno eliminado (solo admin o secretaria)
+     * @param id ID del turno
+     * @returns Turno restaurado
+     */
+    @ApiBearerAuth()
+    @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin o secretaria puede acceder a este recurso.' })
+    restore(@Param('id', ParseIntPipe) id: number) {
+      return this.turnoService.restore(id);
+    }
   @ApiResponse({ status: 400, description: 'Datos inválidos o faltantes.' })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
@@ -562,24 +571,5 @@ export class TurnoController {
   @ApiResponse({ status: 404, description: 'Turno no encontrado.' })
   completar(@Param('id', ParseIntPipe) id: number) {
     return this.turnoService.completarTurno(id);
-  }
-
-  @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SECRETARIA)
-  @ApiOperation({ summary: 'Eliminar turno', description: 'Elimina un turno por su ID.' })
-  @ApiParam({ name: 'id', type: Number, description: 'ID del turno', example: 1 })
-  @ApiResponse({
-    status: 200,
-    description: 'Turno eliminado correctamente.',
-    example: {
-      message: 'Turno eliminado correctamente.'
-    }
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o faltantes.' })
-  @ApiResponse({ status: 401, description: 'No autenticado.' })
-  @ApiResponse({ status: 403, description: 'No autorizado.' })
-  @ApiResponse({ status: 404, description: 'Turno no encontrado.' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.turnoService.remove(id);
   }
 }

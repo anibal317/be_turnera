@@ -1,4 +1,6 @@
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiExtraModels, getSchemaPath, ApiQuery } from '@nestjs/swagger';
+import { ApiForbiddenResponse } from '@nestjs/swagger';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { PacienteService } from './paciente.service';
 import { CreatePacienteDto } from './dto/create-paciente.dto';
@@ -201,9 +203,11 @@ export class PacienteController {
     @Query('nombre') nombre?: string,
     @Query('apellido') apellido?: string,
     @Query('dniPaciente') dniPaciente?: string,
-    @Query('activo') activo?: boolean
+    @Query('activo') activo?: boolean,
+    @GetUser() user?: any
   ) {
-    return this.pacienteService.findAll({ page, limit, sort, order, nombre, apellido, dniPaciente, activo });
+    const isAdmin = user && user.rol === UserRole.ADMIN;
+    return this.pacienteService.findAll({ page, limit, sort, order, nombre, apellido, dniPaciente, activo, isAdmin });
   }
 
   @Get('activos')
@@ -340,8 +344,9 @@ export class PacienteController {
   @ApiResponse({ status: 401, description: 'No autenticado.' })
   @ApiResponse({ status: 403, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Paciente no encontrado.' })
-  findOne(@Param('dni') dni: string) {
-    return this.pacienteService.findOne(dni);
+  findOne(@Param('dni') dni: string, @GetUser() user?: any) {
+    const isAdmin = user && user.rol === UserRole.ADMIN;
+    return this.pacienteService.findOne(dni, isAdmin);
   }
 
   @Patch(':dni')
@@ -427,28 +432,55 @@ export class PacienteController {
     return this.pacienteService.update(dni, updatePacienteDto);
   }
 
+
   @Delete(':dni')
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Eliminar paciente', description: 'Elimina un paciente del sistema por su DNI.' })
+  @ApiOperation({ summary: 'Eliminar paciente (soft delete)', description: 'Elimina un paciente del sistema por su DNI (soft delete).' })
   @ApiParam({ name: 'dni', type: String, description: 'DNI del paciente', example: '12345678' })
   @ApiResponse({
     status: 200,
-    description: 'Paciente eliminado correctamente.',
+    description: 'Paciente marcado como inactivo.',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Paciente eliminado correctamente.' }
+        message: { type: 'string', example: 'Paciente marcado como inactivo.' }
       },
       example: {
-        message: 'Paciente eliminado correctamente.'
+        message: 'Paciente marcado como inactivo.'
       }
     }
   })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o faltantes.' })
-  @ApiResponse({ status: 401, description: 'No autenticado.' })
-  @ApiResponse({ status: 403, description: 'No autorizado.' })
-  @ApiResponse({ status: 404, description: 'Paciente no encontrado.' })
   remove(@Param('dni') dni: string) {
     return this.pacienteService.remove(dni);
   }
+
+  @Get('inactivos')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Listar pacientes eliminados', description: 'Obtiene los pacientes marcados como inactivos.' })
+  @ApiResponse({ status: 200, description: 'Listado de pacientes inactivos.' })
+    /**
+     * Listar pacientes eliminados (solo admin)
+     * @returns Listado de pacientes marcados como inactivos (soft delete)
+     */
+    @ApiBearerAuth()
+    @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin puede acceder a este recurso.' })
+    findInactivos() {
+      return this.pacienteService.findInactivos();
+    }
+
+  @Patch(':dni/restaurar')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Restaurar paciente eliminado', description: 'Restaura un paciente marcado como inactivo.' })
+  @ApiParam({ name: 'dni', type: String, description: 'DNI del paciente', example: '12345678' })
+  @ApiResponse({ status: 200, description: 'Paciente restaurado.' })
+    /**
+     * Restaurar paciente eliminado (solo admin)
+     * @param dni DNI del paciente
+     * @returns Paciente restaurado
+     */
+    @ApiBearerAuth()
+    @ApiForbiddenResponse({ description: 'No autorizado. Solo el admin puede acceder a este recurso.' })
+    restore(@Param('dni') dni: string) {
+      return this.pacienteService.restore(dni);
+    }
 }

@@ -33,6 +33,7 @@ export class DoctorService {
     apellido?: string;
     matricula?: string;
     activo?: boolean;
+    isAdmin?: boolean;
   } = {}): Promise<{ data: Doctor[]; total: number; page: number; limit: number }> {
     const {
       page = 1,
@@ -42,14 +43,23 @@ export class DoctorService {
       nombre,
       apellido,
       matricula,
-      activo
+      activo,
+      isAdmin = false
     } = options;
 
     const where: any = {};
     if (nombre) where.nombre = nombre;
     if (apellido) where.apellido = apellido;
     if (matricula) where.matricula = matricula;
-    if (typeof activo === 'boolean') where.activo = activo;
+    if (!isAdmin) {
+      if (typeof activo === 'boolean') {
+        where.activo = activo;
+      } else {
+        where.activo = true;
+      }
+    } else if (typeof activo === 'boolean') {
+      where.activo = activo;
+    }
 
     const [data, total] = await this.doctorRepository.findAndCount({
       where,
@@ -61,16 +71,16 @@ export class DoctorService {
     return { data, total, page, limit };
   }
 
-  async findOne(id: number): Promise<Doctor> {
+  async findOne(id: number, isAdmin = false): Promise<Doctor> {
+    const where: any = { idDoctor: id };
+    if (!isAdmin) where.activo = true;
     const doctor = await this.doctorRepository.findOne({
-      where: { idDoctor: id },
+      where,
       relations: ['especialidades', 'horariosDisponibles'],
     });
-
     if (!doctor) {
       throw new NotFoundException(`Doctor con ID ${id} no encontrado`);
     }
-
     return doctor;
   }
 
@@ -84,9 +94,52 @@ export class DoctorService {
     return await this.doctorRepository.save(doctor);
   }
 
+
   async remove(id: number): Promise<void> {
     const doctor = await this.findOne(id);
-    await this.doctorRepository.remove(doctor);
+    doctor.activo = false;
+    await this.doctorRepository.save(doctor);
+  }
+
+  async findInactivos(options: {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    order?: 'ASC' | 'DESC';
+    nombre?: string;
+    apellido?: string;
+    matricula?: string;
+  } = {}): Promise<{ data: Doctor[]; total: number; page: number; limit: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      sort = 'apellido',
+      order = 'ASC',
+      nombre,
+      apellido,
+      matricula
+    } = options;
+
+    const where: any = { activo: false };
+    if (nombre) where.nombre = nombre;
+    if (apellido) where.apellido = apellido;
+    if (matricula) where.matricula = matricula;
+
+    const [data, total] = await this.doctorRepository.findAndCount({
+      where,
+      order: { [sort]: order },
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: ['especialidades'],
+    });
+    return { data, total, page, limit };
+  }
+
+  async restore(id: number): Promise<Doctor> {
+    const doctor = await this.doctorRepository.findOne({ where: { idDoctor: id, activo: false } });
+    if (!doctor) throw new NotFoundException('Doctor inactivo no encontrado');
+    doctor.activo = true;
+    return this.doctorRepository.save(doctor);
   }
 
   async findActivos(options: {
