@@ -1,7 +1,9 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { ConsultorioService } from './consultorio.service';
 
 @Controller('consultorios')
+  @ApiBearerAuth()
 export class ConsultorioController {
   constructor(private readonly consultorioService: ConsultorioService) {}
 

@@ -1,9 +1,11 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { CoberturaService } from './cobertura.service';
 import { CreateCoberturaDto } from './dto/create-cobertura.dto';
 import { UpdateCoberturaDto } from './dto/update-cobertura.dto';
 
 @Controller('coberturas')
+  @ApiBearerAuth()
 export class CoberturaController {
   constructor(private readonly coberturaService: CoberturaService) {}
 

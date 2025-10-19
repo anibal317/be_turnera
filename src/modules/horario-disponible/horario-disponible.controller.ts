@@ -1,8 +1,10 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
 import { HorarioDisponibleService, CreateHorarioDisponibleDto, UpdateHorarioDisponibleDto } from './horario-disponible.service';
 import { DiaSemana } from '../../common/enums/dia-semana.enum';
 
 @Controller('horarios-disponibles')
+  @ApiBearerAuth()
 export class HorarioDisponibleController {
   constructor(private readonly horarioService: HorarioDisponibleService) {}
 

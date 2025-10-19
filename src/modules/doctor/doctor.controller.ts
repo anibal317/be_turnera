@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { DoctorService } from './doctor.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
@@ -9,6 +10,7 @@ import { UserRole } from '../auth/entities/usuario.entity';
 
 @Controller('doctores')
 @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
 export class DoctorController {
   constructor(private readonly doctorService: DoctorService) {}
 

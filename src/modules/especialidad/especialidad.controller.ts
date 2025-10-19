@@ -1,3 +1,4 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { EspecialidadService } from './especialidad.service';
 import { CreateEspecialidadDto } from './dto/create-especialidad.dto';
@@ -9,6 +10,7 @@ import { UserRole } from '../auth/entities/usuario.entity';
 
 @Controller('especialidades')
 @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
 export class EspecialidadController {
   constructor(private readonly especialidadService: EspecialidadService) {}
 

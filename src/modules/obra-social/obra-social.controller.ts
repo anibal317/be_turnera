@@ -1,7 +1,9 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ObraSocialService, CreateObraSocialDto, UpdateObraSocialDto } from './obra-social.service';
 
 @Controller('obras-sociales')
+  @ApiBearerAuth()
 export class ObraSocialController {
   constructor(private readonly obraSocialService: ObraSocialService) {}
 
