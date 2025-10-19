@@ -1,0 +1,63 @@
+Listado de rutas de carpetas para el volumen Bk-Datos
+El número de serie del volumen es C684-0118
+D:.
++---dist
+|   +---auth
+|   |   +---decorators
+|   |   +---dto
+|   |   +---guards
+|   |   \---strategies
+|   +---common
+|   |   \---enums
+|   +---database
+|   |   \---seeds
+|   +---entities
+|   \---modules
+|       +---auth
+|       |   +---decorators
+|       |   +---dto
+|       |   +---guards
+|       |   \---strategies
+|       +---cobertura
+|       |   \---dto
+|       +---consultorio
+|       +---doctor
+|       |   \---dto
+|       +---especialidad
+|       |   \---dto
+|       +---horario-disponible
+|       +---obra-social
+|       +---paciente
+|       |   \---dto
+|       \---turno
+|           \---dto
+\---src
+    +---auth
+    |   +---decorators
+    |   +---dto
+    |   +---guards
+    |   \---strategies
+    +---common
+    |   \---enums
+    +---database
+    |   \---seeds
+    +---entities
+    \---modules
+        +---auth
+        |   +---decorators
+        |   +---dto
+        |   +---guards
+        |   \---strategies
+        +---cobertura
+        |   \---dto
+        +---consultorio
+        +---doctor
+        |   \---dto
+        +---especialidad
+        |   \---dto
+        +---horario-disponible
+        +---obra-social
+        +---paciente
+        |   \---dto
+        \---turno
+            \---dto
