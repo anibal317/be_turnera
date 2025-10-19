@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AppLogger } from '../../common/app-logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Consultorio } from './entities/consultorio.entity';
 
+
 @Injectable()
 export class ConsultorioService {
   constructor(
-    @InjectRepository(Consultorio)
-    private readonly consultorioRepository: Repository<Consultorio>,
+    @InjectRepository(Consultorio) private readonly consultorioRepository: Repository<Consultorio>,
+    private readonly logger: AppLogger
   ) {}
 
   async create(nombre: string): Promise<Consultorio> {
@@ -44,6 +46,7 @@ export class ConsultorioService {
     if (!isAdmin) where.activo = true;
     const consultorio = await this.consultorioRepository.findOne({ where });
     if (!consultorio) {
+      this.logger.error(`Consultorio con ID ${id} no encontrado`);
       throw new NotFoundException(`Consultorio con ID ${id} no encontrado`);
     }
     return consultorio;

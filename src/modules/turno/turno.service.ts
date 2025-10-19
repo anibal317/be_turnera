@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { AppLogger } from '../../common/app-logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Turno } from './entities/turno.entity';
@@ -6,11 +7,13 @@ import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { EstadoTurno } from '../../common/enums/estado-turno.enum';
 
+
 @Injectable()
 export class TurnoService {
   constructor(
     @InjectRepository(Turno)
     private readonly turnoRepository: Repository<Turno>,
+    private readonly logger: AppLogger,
   ) {}
 
   async create(createTurnoDto: CreateTurnoDto): Promise<Turno> {
@@ -26,6 +29,7 @@ export class TurnoService {
     });
 
     if (turnoExistente) {
+      this.logger.warn(`Intento de crear turno duplicado para doctor ${createTurnoDto.idDoctor} en horario ${createTurnoDto.fechaHora}`);
       throw new BadRequestException('Ya existe un turno confirmado en ese horario');
     }
 
@@ -77,6 +81,7 @@ export class TurnoService {
       relations: ['paciente', 'doctor', 'consultorio'],
     });
     if (!turno) {
+      this.logger.error(`Turno con ID ${id} no encontrado`);
       throw new NotFoundException(`Turno con ID ${id} no encontrado`);
     }
     return turno;

@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AppLogger } from '../../common/app-logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '@/modules/auth/entities/usuario.entity';
 
+
 @Injectable()
 export class UsuarioService {
   constructor(
-    @InjectRepository(Usuario)
-    private readonly usuarioRepository: Repository<Usuario>,
+    @InjectRepository(Usuario) private readonly usuarioRepository: Repository<Usuario>,
+    private readonly logger: AppLogger
   ) {}
 
 
@@ -26,7 +28,10 @@ export class UsuarioService {
     const where: any = { idUsuario: id };
     if (!isAdmin) where.activo = true;
     const usuario = await this.usuarioRepository.findOne({ where });
-    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+    if (!usuario) {
+      this.logger.error(`Usuario con id ${id} no encontrado`);
+      throw new NotFoundException('Usuario no encontrado');
+    }
     return usuario;
   }
 
@@ -37,19 +42,28 @@ export class UsuarioService {
 
   async update(id: number, data: Partial<Usuario>): Promise<Usuario> {
     const usuario = await this.findOne(id);
+    if (!usuario) {
+      this.logger.warn(`Intento de actualizar usuario inexistente: ${id}`);
+    }
     Object.assign(usuario, data);
     return this.usuarioRepository.save(usuario);
   }
 
   async remove(id: number): Promise<void> {
     const usuario = await this.findOne(id);
+    if (!usuario) {
+      this.logger.warn(`Intento de eliminar usuario inexistente: ${id}`);
+    }
     usuario.activo = false;
     await this.usuarioRepository.save(usuario);
   }
 
   async restore(id: number): Promise<Usuario> {
     const usuario = await this.usuarioRepository.findOne({ where: { idUsuario: id, activo: false } });
-    if (!usuario) throw new NotFoundException('Usuario inactivo no encontrado');
+    if (!usuario) {
+      this.logger.error(`Usuario inactivo con id ${id} no encontrado para restaurar`);
+      throw new NotFoundException('Usuario inactivo no encontrado');
+    }
     usuario.activo = true;
     return this.usuarioRepository.save(usuario);
   }

@@ -1,15 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AppLogger } from '../../common/app-logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Paciente } from './entities/paciente.entity';
 import { CreatePacienteDto } from './dto/create-paciente.dto';
 import { UpdatePacienteDto } from './dto/update-paciente.dto';
 
+
 @Injectable()
 export class PacienteService {
   constructor(
-    @InjectRepository(Paciente)
-    private readonly pacienteRepository: Repository<Paciente>,
+    @InjectRepository(Paciente) private readonly pacienteRepository: Repository<Paciente>,
+    private readonly logger: AppLogger
   ) {}
 
   async create(createPacienteDto: CreatePacienteDto): Promise<Paciente> {
@@ -72,6 +74,7 @@ export class PacienteService {
       relations: ['obraSocial', 'cobertura', 'turnos'],
     });
     if (!paciente) {
+      this.logger.error(`Paciente con DNI ${dni} no encontrado`);
       throw new NotFoundException(`Paciente con DNI ${dni} no encontrado`);
     }
     return paciente;

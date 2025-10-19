@@ -1,3 +1,5 @@
+import { LogsModule } from './modules/logs/logs.module';
+import { AppLogger } from './common/app-logger.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -53,7 +55,9 @@ import { HorarioDisponible } from './modules/horario-disponible/entities/horario
     PacienteModule,
     TurnoModule,
     EspecialidadModule,
-    CommonModule,
+  CommonModule,
+  LogsModule,
   ],
+  providers: [AppLogger],
 })
 export class AppModule {}

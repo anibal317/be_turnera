@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AppLogger } from '../../common/app-logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Doctor } from './entities/doctor.entity';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { Especialidad } from '../especialidad/entities/especialidad.entity';
+
 
 @Injectable()
 export class DoctorService {
@@ -13,6 +15,7 @@ export class DoctorService {
     private readonly doctorRepository: Repository<Doctor>,
     @InjectRepository(Especialidad)
     private readonly especialidadRepository: Repository<Especialidad>,
+    private readonly logger: AppLogger,
   ) {}
 
   async create(createDoctorDto: CreateDoctorDto): Promise<Doctor> {
@@ -79,6 +82,7 @@ export class DoctorService {
       relations: ['especialidades', 'horariosDisponibles'],
     });
     if (!doctor) {
+      this.logger.error(`Doctor con ID ${id} no encontrado`);
       throw new NotFoundException(`Doctor con ID ${id} no encontrado`);
     }
     return doctor;
