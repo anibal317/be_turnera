@@ -3,9 +3,17 @@ import { ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppLogger } from './common/app-logger.service';
+import { RequestLoggerMiddleware } from './common/request-logger.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Log manual para probar creación de logs
+  const logger = app.get(AppLogger);
+  logger.log('La aplicación se ha iniciado correctamente (prueba de log manual)');
+
+  // Middleware global para loguear todas las requests
+  // (Registrado globalmente en AppModule, no es necesario aquí)
 
   // Habilitar validación global 
   app.useGlobalPipes(

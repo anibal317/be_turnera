@@ -2,7 +2,7 @@ import { Injectable, LoggerService } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const LOG_FILE = path.resolve(__dirname, '../../../logs/app.log');
+const LOG_FILE = path.join(process.cwd(), 'logs', 'app.log');
 
 @Injectable()
 export class AppLogger implements LoggerService {
@@ -23,10 +23,16 @@ export class AppLogger implements LoggerService {
   }
 
   private writeLog(level: string, message: string, trace?: string) {
+  console.log('AppLogger.writeLog llamado:', level, message);
+  console.log('Ruta absoluta del log:', LOG_FILE);
     const timestamp = new Date().toISOString();
     const log = `[${timestamp}] [${level}] ${message}${trace ? ' | ' + trace : ''}\n`;
-    fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true });
-    fs.appendFileSync(LOG_FILE, log, { encoding: 'utf8' });
+    try {
+      fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true });
+      fs.appendFileSync(LOG_FILE, log, { encoding: 'utf8' });
+    } catch (err) {
+      console.error('Error escribiendo en el archivo de logs:', err);
+    }
   }
 
   static getLogs(limit = 100): string[] {

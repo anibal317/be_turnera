@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { AppLogger } from '../../common/app-logger.service';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +14,7 @@ export class AuthService {
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
     private readonly jwtService: JwtService,
+    private readonly logger: AppLogger,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -22,6 +24,7 @@ export class AuthService {
     });
 
     if (existing) {
+      this.logger.error(`Intento de registro con email ya existente: ${registerDto.email}`);
       throw new ConflictException('El email ya está registrado');
     }
 
@@ -67,17 +70,20 @@ export class AuthService {
     });
 
     if (!usuario) {
+      this.logger.error(`Login fallido: usuario no encontrado (${loginDto.email})`);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
     // Verificar contraseña
     const isValid = await bcrypt.compare(loginDto.password, usuario.password);
     if (!isValid) {
+      this.logger.error(`Login fallido: contraseña incorrecta para ${loginDto.email}`);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
     // Verificar si está activo
     if (!usuario.activo) {
+      this.logger.error(`Login fallido: usuario inactivo (${loginDto.email})`);
       throw new UnauthorizedException('Usuario inactivo');
     }
 

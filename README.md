@@ -81,7 +81,26 @@ npm run start:dev
 ---
 
 
-## Endpoint de Logs de Errores y Warnings (Solo Admin)
+
+## ¿Dónde se guardan los logs y qué formato tienen?
+
+Los logs se almacenan en el archivo:
+
+- `logs/app.log` (en la raíz del proyecto)
+
+Cada línea del archivo tiene el siguiente formato:
+
+```
+[YYYY-MM-DDTHH:mm:ss.sssZ] [NIVEL] mensaje | stacktrace (opcional)
+```
+
+Ejemplo:
+
+```
+[2025-10-19T12:00:00.000Z] [ERROR] Error en el servicio X | Stacktrace...
+[2025-10-19T12:01:00.000Z] [WARN] Advertencia en el módulo Y
+```
+
 
 El sistema registra automáticamente todos los errores y advertencias en el archivo `logs/app.log`.
 

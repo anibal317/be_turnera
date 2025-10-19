@@ -1,6 +1,7 @@
 import { LogsModule } from './modules/logs/logs.module';
 import { AppLogger } from './common/app-logger.service';
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { RequestLoggerMiddleware } from './common/request-logger.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './modules/auth/auth.module';
@@ -60,4 +61,9 @@ import { HorarioDisponible } from './modules/horario-disponible/entities/horario
   ],
   providers: [AppLogger],
 })
-export class AppModule {}
+
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+  }
+}
