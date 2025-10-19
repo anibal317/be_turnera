@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Paciente } from './paciente.entity';
-import { Doctor } from './doctor.entity';
-import { Consultorio } from './consultorio.entity';
-import { EstadoTurno } from '@/common/enums';
+import { Paciente } from '../../paciente/entities/paciente.entity';
+import { Doctor } from '../../doctor/entities/doctor.entity';
+import { Consultorio } from '../../consultorio/entities/consultorio.entity';
+import { EstadoTurno } from '../../../common/enums/estado-turno.enum';
 
 
 @Entity('turno')

@@ -2,11 +2,11 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query,
 import { TurnoService } from './turno.service';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
-import { EstadoTurno } from '@/common/enums';
+import { EstadoTurno } from '../../common/enums/estado-turno.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '@/entities';
+import { UserRole } from '../auth/entities/usuario.entity';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 
 @Controller('turnos')

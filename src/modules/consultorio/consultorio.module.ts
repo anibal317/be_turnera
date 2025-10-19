@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Consultorio } from '@/entities/consultorio.entity';
+import { Consultorio } from './entities/consultorio.entity';
 import { ConsultorioController } from './consultorio.controller';
 import { ConsultorioService } from './consultorio.service';
 

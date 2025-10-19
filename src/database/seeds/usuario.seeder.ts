@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { Usuario, UserRole } from '../../entities/usuario.entity';
+import { Usuario, UserRole } from '../../modules/auth/entities/usuario.entity';
 
 export class UsuarioSeeder {
   public static async run(dataSource: DataSource): Promise<void> {

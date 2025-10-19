@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Doctor } from './doctor.entity';
-import { Consultorio } from './consultorio.entity';
+import { Doctor } from '../../doctor/entities/doctor.entity';
+import { Consultorio } from '../../consultorio/entities/consultorio.entity';
 import { DiaSemana } from '@/common/enums';
 
 @Entity('horario_disponible')

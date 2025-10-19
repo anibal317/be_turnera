@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { ObraSocial } from './obra-social.entity';
-import { Paciente } from './paciente.entity';
+import { ObraSocial } from '../../obra-social/entities/obra-social.entity';
+import { Paciente } from '../../paciente/entities/paciente.entity';
 
 @Entity('cobertura')
 export class Cobertura {

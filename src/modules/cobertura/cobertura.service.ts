@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Cobertura } from '@/entities/cobertura.entity';
+import { Cobertura } from './entities/cobertura.entity';
 import { CreateCoberturaDto } from './dto/create-cobertura.dto';
 import { UpdateCoberturaDto } from './dto/update-cobertura.dto';
 

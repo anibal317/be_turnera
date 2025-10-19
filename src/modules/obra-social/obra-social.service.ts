@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ObraSocial } from '@/entities/obra-social.entity';
+import { ObraSocial } from './entities/obra-social.entity';
 
 export class CreateObraSocialDto {
   codigo: string;

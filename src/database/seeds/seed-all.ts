@@ -32,7 +32,7 @@ if (require.main === module) {
       username: process.env.DB_USERNAME || 'root',
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_DATABASE || 'turnera',
-      entities: ['src/entities/*.entity{.ts,.js}'],
+  entities: ['src/modules/**/entities/*.entity{.ts,.js}'],
       synchronize: false,
       logging: false,
     });

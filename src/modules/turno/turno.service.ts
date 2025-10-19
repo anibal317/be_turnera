@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Turno } from '@/entities/turno.entity';
+import { Turno } from './entities/turno.entity';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
-import { EstadoTurno } from '@/common/enums';
+import { EstadoTurno } from '../../common/enums/estado-turno.enum';
 
 @Injectable()
 export class TurnoService {

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ObraSocial } from '@/entities/obra-social.entity';
+import { ObraSocial } from './entities/obra-social.entity';
 import { ObraSocialController } from './obra-social.controller';
 import { ObraSocialService } from './obra-social.service';
 

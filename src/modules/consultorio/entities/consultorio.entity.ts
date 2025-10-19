@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { HorarioDisponible } from './horario-disponible.entity';
-import { Turno } from './turno.entity';
+import { HorarioDisponible } from '../../horario-disponible/entities/horario-disponible.entity';
+import { Turno } from '../../turno/entities/turno.entity';
 
 @Entity('consultorio')
 export class Consultorio {

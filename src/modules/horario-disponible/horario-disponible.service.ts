@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { HorarioDisponible } from '@/entities/horario-disponible.entity';
-import { DiaSemana } from '@/common/enums';
+import { HorarioDisponible } from './entities/horario-disponible.entity';
+import { DiaSemana } from '../../common/enums/dia-semana.enum';
 
 export class CreateHorarioDisponibleDto {
   idDoctor: number;

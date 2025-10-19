@@ -1,4 +1,4 @@
-import { EstadoTurno } from '@/common/enums';
+import { EstadoTurno } from '../../../common/enums/estado-turno.enum';
 import { IsString, IsInt, IsDateString, IsEnum, IsOptional } from 'class-validator';
 
 export class CreateTurnoDto {

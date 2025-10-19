@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToMany, OneToMany } from 'typeorm';
-import { Especialidad } from './especialidad.entity';
-import { HorarioDisponible } from './horario-disponible.entity';
-import { Turno } from './turno.entity';
+import { Especialidad } from '../../especialidad/entities/especialidad.entity';
+import { HorarioDisponible } from '../../horario-disponible/entities/horario-disponible.entity';
+import { Turno } from '../../turno/entities/turno.entity';
 
 @Entity('doctor')
 export class Doctor {

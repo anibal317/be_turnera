@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { HorarioDisponible } from '@/entities/horario-disponible.entity';
+import { HorarioDisponible } from './entities/horario-disponible.entity';
 import { HorarioDisponibleController } from './horario-disponible.controller';
 import { HorarioDisponibleService } from './horario-disponible.service';
 

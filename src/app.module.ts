@@ -7,17 +7,16 @@ import { PacienteModule } from './modules/paciente/paciente.module';
 import { TurnoModule } from './modules/turno/turno.module';
 import { EspecialidadModule } from './modules/especialidad/especialidad.module';
 import { CommonModule } from './modules/common.module';
-import {
-  Usuario,
-  Doctor,
-  Paciente,
-  Turno,
-  Especialidad,
-  ObraSocial,
-  Cobertura,
-  Consultorio,
-  HorarioDisponible,
-} from './entities';
+
+import { Usuario } from './modules/auth/entities/usuario.entity';
+import { Doctor } from './modules/doctor/entities/doctor.entity';
+import { Paciente } from './modules/paciente/entities/paciente.entity';
+import { Turno } from './modules/turno/entities/turno.entity';
+import { Especialidad } from './modules/especialidad/entities/especialidad.entity';
+import { ObraSocial } from './modules/obra-social/entities/obra-social.entity';
+import { Cobertura } from './modules/cobertura/entities/cobertura.entity';
+import { Consultorio } from './modules/consultorio/entities/consultorio.entity';
+import { HorarioDisponible } from './modules/horario-disponible/entities/horario-disponible.entity';
 
 @Module({
   imports: [
